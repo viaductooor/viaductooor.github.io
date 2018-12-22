@@ -1,17 +1,57 @@
-$("#loadlinks").click(function() {
-        // creating input on-the-fly
-        var input = $(document.createElement("input"));
-        input.attr("type", "file");
-        // add onchange handler if you wish to get the file :)
-        input.trigger("click"); // opening dialog
-        return false; // avoiding navigation
-    });
+var MapUtil = {
+    resizeMapDiv : function(){
+        var height = 0;
+        var body = window.document.body;
+        var maincontent = document.getElementById("maincontent");
+        var mapdiv = document.getElementById("mapid");
+        if (window.innerHeight) {
+            height = window.innerHeight;
+        } else if (body.parentElement.clientHeight) {
+            height = body.parentElement.clientHeight;
+        } else if (body && body.clientHeight) {
+            height = body.clientHeight;
+        }
+        mapdiv.style.height = ((height - maincontent.offsetTop) + "px");
+    },
+    
+    //tile layer
+    greyScaleTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+    streetTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+};
 
-$("#loadtrips").click(function() {
-    // creating input on-the-fly
-    var input = $(document.createElement("input"));
-    input.attr("type", "file");
-    // add onchange handler if you wish to get the file :)
-    input.trigger("click"); // opening dialog
-    return false; // avoiding navigation
-});
+window.onload=function(){
+    //initiate tile layers
+    greyscale = L.tileLayer(MapUtil.greyScaleTileUrl,{
+        id : "mapbox.light",
+        maxZoom : 18
+    });
+    streets = L.tileLayer(MapUtil.streetTileUrl,{
+        id : "mapbox.streets",
+        maxZoom : 18
+    });
+    
+    //initiate map
+    MapUtil.resizeMapDiv();
+    mymap = L.map('mapid',{zoomControl:false}).setView([ 40.7379, -73.9919 ], 13);
+    
+    streets.addTo(mymap);
+    
+    //file input
+    var input = document.getElementById("fileinput");
+    var label = document.getElementById("filelabel");
+    var confirm = document.getElementById("confirmFileBtn");
+    EventUtil.addHandler(input,"change",function(e){
+        files = EventUtil.getTarget(e).files;
+        label.innerHTML = files[0].name;
+    });
+    
+    //tile switcher
+    $("#greyscale").click(function(){
+        streets.removeFrom(mymap);
+        greyscale.addTo(mymap);
+    });
+    $("#streets").click(function(){
+        greyscale.removeFrom(mymap);
+        streets.addTo(mymap);
+    });
+};

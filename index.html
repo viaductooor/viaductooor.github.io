@@ -21,13 +21,16 @@
 		src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
 		integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
 		crossorigin="anonymous"></script>
+	<script src="scripts/EventUtil.js"></script>
 
 	<head>
 		<title>Map</title>
 	</head>
 
 	<body>
-		<nav class="navbar navbar-expand-lg navbar-light bg-light">
+		<script src="scripts/myscript.js"></script>
+
+		<header class="navbar navbar-expand-lg navbar-light bg-light">
 			<a class="navbar-brand" href="#">Urban Transportation Network</a>
 			<button class="navbar-toggler" type="button" data-toggle="collapse"
 				data-target="#navbarSupportedContent"
@@ -53,8 +56,8 @@
 							role="button" data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="false"> Load Layer </a>
 						<div class="dropdown-menu" aria-labelledby="navbarDropdown">
-							<a id="loadlinks" class="dropdown-item" href="#">Load Trips</a>
-							<a id="loadtrips" class="dropdown-item" href="#">Load Links</a>
+							<a id="loadtrips" class="dropdown-item btn" data-toggle="modal" data-target="#pickfilemodal">Load Trips</a>
+							<a id="loadlinks" class="dropdown-item btn" data-toggle="modal" data-target="#pickfilemodal">Load Links</a>
 						</div></li>
 					<li class="nav-item"><a class="nav-link" href="#">UE
 							Assignment <span class="sr-only">(current)</span>
@@ -65,40 +68,49 @@
 							Loading</a></li>
 				</ul>
 			</div>
-		</nav>
+		</header>
 
+		<div class="container-fluid">
+			<div class="row flex-x1-nowrap" id="maincontent">
+				<div class="col-12 col-md-2 col-xl-1 bd-sidebar">
+					<div class="custom-control custom-radio">
+						<div class="btn-group-vertical"  style="width:100%;margin-top:20px;">
+							<button id="greyscale" type="button" class="btn btn-outline-secondary btn-block">Grey Scale</button>
+							<button id="streets" type="button" class="btn btn-outline-secondary btn-block">Streets</button>
+						</div>
 
-		<div id="mapid" style="height: 90%"></div>
-		<script type="text/javascript">
-	function resizeElementHeight(element) {
-    var height = 0;
-    var body = window.document.body;
-    if (window.innerHeight) {
-        height = window.innerHeight;
-    } else if (body.parentElement.clientHeight) {
-        height = body.parentElement.clientHeight;
-    } else if (body && body.clientHeight) {
-        height = body.clientHeight;
-    }
-    element.style.height = ((height - element.offsetTop) + "px");
-  }
+					</div>
+				</div>
+				<main class="col-12 col-md-10 col-xl-11 bd-content" role="main">
+					<div id="mapid"></div>
+				</main>
+			</div>
+		</div>
 
-resizeElementHeight(document.getElementById("mapid"));
-	</script>
-		<script type="text/javascript">
-		mymap = L.map('mapid').setView([ 40.7379, -73.9919 ], 13);
+		
 
-		L
-				.tileLayer(
-						'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
-						{
-							maxZoom : 18,
-							attribution : 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, '
-									+ '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, '
-									+ 'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-							id : 'mapbox.streets'
-						}).addTo(mymap);
-	</script>
-		<script type="text/javascript" src="scripts/myscript.js"></script>
+		<!-- Modal -->
+		<div class="modal fade" id="pickfilemodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel">Pick a csv file</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+				<div class="modal-body">
+					<div class="custom-file">
+						<input type="file" id="fileinput" class="custom-file-input">
+						<label id="filelabel" class="custom-file-label" for="customFile">Choose file</label>
+					</div>
+				</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-primary" id="confirmFileBtn">Ok</button>
+					</div>
+				</div>
+			</div>
+		</div>
 	</body>
 </html>
