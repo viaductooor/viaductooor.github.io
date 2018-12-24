@@ -2,7 +2,6 @@ var MapUtil = {
     resizeMapDiv : function(){
         var height = 0;
         var body = window.document.body;
-        var maincontent = document.getElementById("maincontent");
         var mapdiv = document.getElementById("mapid");
         if (window.innerHeight) {
             height = window.innerHeight;
@@ -11,7 +10,7 @@ var MapUtil = {
         } else if (body && body.clientHeight) {
             height = body.clientHeight;
         }
-        mapdiv.style.height = ((height - maincontent.offsetTop) + "px");
+        mapdiv.style.height = ((height - mapdiv.offsetTop) + "px");
     },
     
     //tile layer
@@ -46,12 +45,30 @@ window.onload=function(){
     });
     
     //tile switcher
-    $("#greyscale").click(function(){
-        streets.removeFrom(mymap);
+	$("#streets")
+		.attr("disabled","")
+		.attr("class","btn btn-secondary");
+	$("#greyscale")
+		.removeAttr("disabled")
+		.attr("class","btn btn-outline-secondary");
+	$("#greyscale").click(function(){
+		$("#greyscale")
+			.attr("disabled","")
+			.attr("class","btn btn-secondary");
+		$("#streets")
+			.removeAttr("disabled")
+			.attr("class","btn btn-outline-secondary");
+		streets.removeFrom(mymap);
         greyscale.addTo(mymap);
     });
     $("#streets").click(function(){
-        greyscale.removeFrom(mymap);
+		$("#streets")
+			.attr("disabled","")
+			.attr("class","btn btn-secondary");
+		$("#greyscale")
+			.removeAttr("disabled")
+			.attr("class","btn btn-outline-secondary");
+		greyscale.removeFrom(mymap);
         streets.addTo(mymap);
     });
 };
