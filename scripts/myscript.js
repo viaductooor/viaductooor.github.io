@@ -1,13 +1,40 @@
 var MapUtil = {
-    include: function(file){
+    defaultCircleMarkerOptions: {
+        radius: 8,
+        fillColor: "cyan",
+        color: "#000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    },
 
-        var script  = document.createElement('script');
-        script.src  = file;
-        script.type = 'text/javascript';
-        script.defer = true;
+    defaultWayFilterOptions:{
+        filter: function(feature){
+            if(feature.geometry.type=="LineString")
+                return true;
+            else
+                return false;
+        }
+    },
 
-        document.getElementsByTagName('head').item(0).appendChild(script);
-
+    //Default trip marker function. It provides a reactive way 
+    //to show detailed information when you click on a marker.
+    defaultTripFilterOptions:{
+        pointToLayer: function(feature,latlng){
+            var points = feature.geometry.coordinates;
+            var marker = L.circleMarker(latlng, MapUtil.defaultCircleMarkerOptions);
+            var popup1 = L.popup({autoClose:false})
+                .setLatLng([points[0][1],points[0][0]])
+                .setContent("["+points[0][1]+", "+points[0][0]+"]<br>Location");
+            var popup2 = L.popup({autoClose:false})
+                .setLatLng([points[1][1],points[1][0]])
+                .setContent("["+points[1][1]+", "+points[1][0]+"]<br>Destination");
+            marker.on("click",function(event){
+                popup1.openOn(mymap);
+                popup2.openOn(mymap);
+            });
+            return marker;
+        }
     },
     
     resizeMapDiv : function(){
@@ -23,15 +50,40 @@ var MapUtil = {
         }
         mapdiv.style.height = ((height - mapdiv.offsetTop) + "px");
     },
+
+
+
+    //Add a GeoJSON layer to the map. 
+    displayGeoJson: function(geojson,options,name){
+        try{
+            var l = L.geoJSON(geojson,options);
+            l.addTo(mymap);
+            layerGroup.addOverlay(l,name);
+        }catch(ex){
+            alert(ex.message+"\nWrong GeoJSON document.");
+        }
+    },
+
+    //Transform the osm data to a GeoJSON object and add it to the map.
+    displayOsm: function(osm, options){
+        try{
+            var geojson = osmtogeojson(osm);
+            L.geoJSON(geojson,options).addTo(mymap);
+        }catch(ex){
+            alert(ex.message+"\nError occurred when trying to transform OSM to GEOJSON.");
+        }
+        
+    },
+    
+    //Transform a csv file of trips to a GeoJSON object, and add it to the map.
     readAndDisplayTrips: function(file){
         var reader = new FileReader();
         var trips = [];
-        // $("#pickfilemodal").modal('toggle');
+
         reader.onload = function(progressEvent){
             var lines = reader.result.split("\n");
             lines = lines.slice(1);
             var i;
-            
             for(var i=0;i<lines.length;i++){
                 var items = lines[i].split(',');
                 if(items.length==7){
@@ -63,51 +115,11 @@ var MapUtil = {
                     }
                 });
             }
-
-            console.log(JSON.stringify(gjson));
-            
-            var geojsonMarkerOptions1 = {
-                radius: 8,
-                fillColor: "#ff7800",
-                color: "#000",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            };
-            
-            var geojsonMarkerOptions2 = {
-                radius: 8,
-                fillColor: "cyan",
-                color: "#000",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            };
-            
-            L.geoJSON(gjson,{
-                pointToLayer: function (feature, latlng) {
-                    var points = feature.geometry.coordinates;
-                    var marker = L.circleMarker(latlng, geojsonMarkerOptions1);
-                    var popup1 = L.popup({autoClose:false})
-                        .setLatLng([points[0][1],points[0][0]])
-                        .setContent("Location");
-                    var popup2 = L.popup({autoClose:false})
-                        .setLatLng([points[1][1],points[1][0]])
-                        .setContent("Destination");
-                    marker.on("click",function(event){
-                        popup1.openOn(mymap);
-                        popup2.openOn(mymap);
-                    });
-                    // marker.on("mouseout",function(event){
-                    //     popup1.removeFrom(mymap);
-                    //     popup2.removeFrom(mymap);
-                    // });
-                    return marker;
-                }
-            }).addTo(mymap);
+            MapUtil.displayGeoJson(gjson,MapUtil.defaultTripFilterOptions,"Trips");
         };
         reader.readAsText(file);
     },
+    
     //tile layer
     greyScaleTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
     streetTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
@@ -115,11 +127,11 @@ var MapUtil = {
 
 window.onload=function(){
     //initiate tile layers
-    greyscale = L.tileLayer(MapUtil.greyScaleTileUrl,{
+    var greyscale = L.tileLayer(MapUtil.greyScaleTileUrl,{
         id : "mapbox.light",
         maxZoom : 18
     });
-    streets = L.tileLayer(MapUtil.streetTileUrl,{
+    var streets = L.tileLayer(MapUtil.streetTileUrl,{
         id : "mapbox.streets",
         maxZoom : 18
     });
@@ -127,51 +139,56 @@ window.onload=function(){
     //initiate map
     MapUtil.resizeMapDiv();
     mymap = L.map('mapid',{zoomControl:false}).setView([ 40.7379, -73.9919 ], 13);
-    
     streets.addTo(mymap);
+    var baseLayers = {
+        "Streets":streets,
+        "Grey Scale":greyscale
+    };
+    var extraLayers = new Object();
+    layerGroup = L.control.layers(baseLayers,extraLayers).addTo(mymap);
     
     //file input
     var input = document.getElementById("fileinput"),
         modal = document.getElementById("pickfilemodal"),
-        exampleTrips = document.getElementById("exampleTrips");
+        exampleTrips = document.getElementById("exampleTrips"),
+        osminput = document.getElementById("osminput"),
+        osmmodal = document.getElementById("pickosmmodal"),
+        geojsoninput = document.getElementById("geojsoninput"),
+        geojsonmodal = document.getElementById("geojsonmodal");
     
     EventUtil.addHandler(exampleTrips,"click",function(e){
         $("#pickfilemodal").modal('toggle');
-        var geojsonMarkerOptions = {
-            radius: 8,
-            fillColor: "#ff7800",
-            color: "#000",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.8
-        };
-        L.geoJSON(getTrips(),{
-            pointToLayer: function (feature, latlng) {
-                var points = feature.geometry.coordinates;
-                var marker = L.circleMarker(latlng, geojsonMarkerOptions);
-                var popup1 = L.popup({autoClose:false})
-                    .setLatLng([points[0][1],points[0][0]])
-                    .setContent("Location");
-                var popup2 = L.popup({autoClose:false})
-                    .setLatLng([points[1][1],points[1][0]])
-                    .setContent("Destination");
-                marker.on("click",function(event){
-                    popup1.openOn(mymap);
-                    popup2.openOn(mymap);
-                });
-                // marker.on("mouseout",function(event){
-                //     popup1.removeFrom(mymap);
-                //     popup2.removeFrom(mymap);
-                // });
-                return marker;
-            }
-        }).addTo(mymap);
-        
+        MapUtil.displayGeoJson(getTrips(),MapUtil.defaultTripFilterOptions,"Example Trips");
     });
+    
     EventUtil.addHandler(input,"change",function(e){
         var files = EventUtil.getTarget(e).files;
         $("#pickfilemodal").modal('toggle');
         MapUtil.readAndDisplayTrips(files[0]);
+    });
+
+    EventUtil.addHandler(osminput,"change",function(e){
+        var files = EventUtil.getTarget(e).files;
+        $("#pickosmmodal").modal('toggle');
+        var reader = new FileReader();
+        reader.onload = function(progressEvent){
+            var osmData = $.parseXML(reader.result);
+            var geoJsonData = osmtogeojson(osmData);
+            MapUtil.displayGeoJson(geoJsonData,MapUtil.defaultWayFilterOptions,"OSM Layer");
+        }
+        reader.readAsText(files[0]);
+    });
+
+    EventUtil.addHandler(geojsoninput,"change",function(e){
+        var files = EventUtil.getTarget(e).files;
+        $("#geojsonmodal").modal('toggle');
+        var reader = new FileReader();
+        reader.onload = function(progressEvent){
+            var data = reader.result;
+            var geoJsonData = JSON.parse(data);
+            MapUtil.displayGeoJson(geoJsonData,MapUtil.defaultWayFilterOptions,"GeoJSON Layer");
+        }
+        reader.readAsText(files[0]);
     });
     
     //tile switcher
