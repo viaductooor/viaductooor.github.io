@@ -99,12 +99,8 @@ var MapUtil = {
             }
             return hexString;
         };
-    
-        r = Math.round(rgb[0] * 255);
-        g = Math.round(rgb[1] * 255);
-        b = Math.round(rgb[2] * 255);
-        console.log(r+","+g+","+b);
-        return "#"+decimal2hex(r)+decimal2hex(g)+decimal2hex(b);
+
+        return "#"+decimal2hex(rgb[0])+decimal2hex(rgb[1])+decimal2hex(rgb[2]);
     },
     
     resizeMapDiv : function(){
@@ -166,15 +162,19 @@ var MapUtil = {
         //     console.log(JSON.stringify(links));
         // }
         // reader.readAsText(file);
+        
+    },
+
+    readAndDisplayLinks: function(file){
         var reader = new FileReader();
+        var gjson = {
+            "type":"FeatureCollection",
+            "features":[]
+        };
         reader.onload = function(progressEvent){
             var lines = reader.result.split("\n");
             lines = lines.slice(1);
             var i;
-            var gjson = {
-                "type":"FeatureCollection",
-                "features":[]
-            };
             for(i = 0;i <lines.length;i++){
                 var items = lines[i].split(',');
                 if(items[0]&items[1]&items[2]){
@@ -202,24 +202,29 @@ var MapUtil = {
 
                 }
             }
-            console.log(JSON.stringify(gjson));
-            return gjson;
+            //console.log(JSON.stringify(gjson));
+            var options = {
+                style: function(feature){
+                    var grad = feature.properties.value/100.0;
+                    if (grad>1)
+                        grad = 1;
+                    return {
+                        color:MapUtil.getGradientColorString(grad)
+                    };
+                }
+            };
+            try{
+                var l = L.geoJSON(gjson,options);
+                l.addTo(mymap);
+                layerGroup.addOverlay(l,"Links");
+            }catch(ex){
+                alert(ex.message+"\nWrong GeoJSON document.");
+            }
         };
         reader.readAsText(file);
-    },
+        console.log(JSON.stringify(gjson));
 
-    readAndDisplayLinks: function(file){
-        var gjson = MapUtil.csv2linkGeoJson(file);
-        var options = {
 
-        };
-        try{
-            var l = L.geoJSON(gjson);
-            l.addTo(mymap);
-            layerGroup.addOverlay(l,"Links");
-        }catch(ex){
-            alert(ex.message+"\nWrong GeoJSON document.");
-        }
     },
     
     //Transform a csv file of trips to a GeoJSON object, and add it to the map.
