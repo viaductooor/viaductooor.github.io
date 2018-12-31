@@ -36,6 +36,76 @@ var MapUtil = {
             return marker;
         }
     },
+
+    //Get a color of green-yellow-red, depending on the value of grad.
+    //Grad is a float between 0 and 1, where 0 is green and 1 is red.
+    getGradientColorString: function(grad){
+        var hslToRgb = function(hue, saturation, lightness){
+            // based on algorithm from http://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB
+            if( hue == undefined ){
+              return [0, 0, 0];
+            }
+          
+            var chroma = (1 - Math.abs((2 * lightness) - 1)) * saturation;
+            var huePrime = hue / 60;
+            var secondComponent = chroma * (1 - Math.abs((huePrime % 2) - 1));
+          
+            huePrime = Math.floor(huePrime);
+            var red;
+            var green;
+            var blue;
+          
+            if( huePrime === 0 ){
+              red = chroma;
+              green = secondComponent;
+              blue = 0;
+            }else if( huePrime === 1 ){
+              red = secondComponent;
+              green = chroma;
+              blue = 0;
+            }else if( huePrime === 2 ){
+              red = 0;
+              green = chroma;
+              blue = secondComponent;
+            }else if( huePrime === 3 ){
+              red = 0;
+              green = secondComponent;
+              blue = chroma;
+            }else if( huePrime === 4 ){
+              red = secondComponent;
+              green = 0;
+              blue = chroma;
+            }else if( huePrime === 5 ){
+              red = chroma;
+              green = 0;
+              blue = secondComponent;
+            }
+          
+            var lightnessAdjustment = lightness - (chroma / 2);
+            red += lightnessAdjustment;
+            green += lightnessAdjustment;
+            blue += lightnessAdjustment;
+          
+            return [Math.round(red * 255), Math.round(green * 255), Math.round(blue * 255)];
+          
+          };    
+        
+        rgb = hslToRgb(Math.round(130-grad*130),0.91,0.39);
+
+        var decimal2hex = function(d){
+            hexString = d.toString(16);
+            if (hexString.length % 2) {
+                hexString = '0' + hexString;
+            }
+            return hexString;
+        };
+    
+        r = Math.round(rgb[0] * 255);
+        g = Math.round(rgb[1] * 255);
+        b = Math.round(rgb[2] * 255);
+        console.log(r+","+g+","+b);
+        return "#"+decimal2hex(r)+decimal2hex(g)+decimal2hex(b);
+    },
     
     resizeMapDiv : function(){
         var height = 0;
@@ -74,6 +144,83 @@ var MapUtil = {
         }
         
     },
+
+    csv2linkGeoJson: function(file){
+        /**
+         * Read map of <node_id, coordinate>. 
+         * The code below was executed once to create the map file,
+         *  thus is useless now.
+         */
+        // var reader = new FileReader();
+        // var links = {};
+        // reader.onload = function(progressEvent){
+        //     var lines = reader.result.split("\n");
+        //     lines = lines.slice(1);
+        //     var i;
+        //     for(var i=0;i<lines.length;i++){
+        //         var items = lines[i].split(',');
+        //         if(items[0]&items[1]&items[2]){
+        //             links[items[0]] = [items[2],items[1]];
+        //         }
+        //     }
+        //     console.log(JSON.stringify(links));
+        // }
+        // reader.readAsText(file);
+        var reader = new FileReader();
+        reader.onload = function(progressEvent){
+            var lines = reader.result.split("\n");
+            lines = lines.slice(1);
+            var i;
+            var gjson = {
+                "type":"FeatureCollection",
+                "features":[]
+            };
+            for(i = 0;i <lines.length;i++){
+                var items = lines[i].split(',');
+                if(items[0]&items[1]&items[2]){
+                    var start = nodes[items[0]];
+                    var end = nodes[items[1]];
+                    
+                    if(start&&end){
+                        //console.log(start+","+end);
+                        var start_lat = Number(start[0]);
+                        var start_lon = Number(start[1]);
+                        var end_lat = Number(end[0]);
+                        var end_lon = Number(end[1]);
+                        var value = items[2];
+                        gjson.features.push({
+                            "type":"Feature",
+                            "geometry":{
+                                "type":"LineString",
+                                "coordinates":[[start_lon,start_lat],[end_lon,end_lat]],
+                            },
+                            "properties":{
+                                "value":Number(value)
+                            }
+                        });
+                    }
+
+                }
+            }
+            console.log(JSON.stringify(gjson));
+            return gjson;
+        };
+        reader.readAsText(file);
+    },
+
+    readAndDisplayLinks: function(file){
+        var gjson = MapUtil.csv2linkGeoJson(file);
+        var options = {
+
+        };
+        try{
+            var l = L.geoJSON(gjson);
+            l.addTo(mymap);
+            layerGroup.addOverlay(l,"Links");
+        }catch(ex){
+            alert(ex.message+"\nWrong GeoJSON document.");
+        }
+    },
     
     //Transform a csv file of trips to a GeoJSON object, and add it to the map.
     readAndDisplayTrips: function(file){
@@ -84,7 +231,7 @@ var MapUtil = {
             var lines = reader.result.split("\n");
             lines = lines.slice(1);
             var i;
-            for(var i=0;i<lines.length;i++){
+            for(i=0; i<lines.length; i++){
                 var items = lines[i].split(',');
                 if(items.length==7){
                     if(items[2]&items[3]&items[4]&items[5]){
@@ -123,6 +270,7 @@ var MapUtil = {
     //tile layer
     greyScaleTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
     streetTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+
 };
 
 window.onload=function(){
@@ -155,6 +303,8 @@ window.onload=function(){
         osmmodal = document.getElementById("pickosmmodal"),
         geojsoninput = document.getElementById("geojsoninput"),
         geojsonmodal = document.getElementById("geojsonmodal");
+        linksinput = document.getElementById("linksinput");
+        linksmodal = document.getElementById("linksmodal");
     
     EventUtil.addHandler(exampleTrips,"click",function(e){
         $("#pickfilemodal").modal('toggle');
@@ -189,6 +339,13 @@ window.onload=function(){
             MapUtil.displayGeoJson(geoJsonData,MapUtil.defaultWayFilterOptions,"GeoJSON Layer");
         }
         reader.readAsText(files[0]);
+    });
+
+    EventUtil.addHandler(linksinput,"change",function(e){
+        var files = EventUtil.getTarget(e).files;
+        $("#linksmodal").modal('toggle');
+        MapUtil.readAndDisplayLinks(files[0]);
+        //MapUtil.csv2linkGeoJson(files[0]);
     });
     
     //tile switcher
