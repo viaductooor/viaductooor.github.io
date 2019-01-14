@@ -8,12 +8,36 @@ var MapUtil = {
         fillOpacity: 0.8
     },
 
-    defaultWayFilterOptions:{
+    amenities : ["school","restaurant","hospital","bank","community_centre"],
+
+
+    geoJsonFilterOptions:{
         filter: function(feature){
-            if(feature.geometry.type=="LineString")
+            var amenities = ["school","restaurant","hospital","bank","community_centre"];
+            if(feature.properties.type=="way")
                 return true;
-            else
-                return false;
+            else if(feature.properties.tags){
+                if(MapUtil.amenities.indexOf(feature.properties.tags.amenity)!=-1){
+                    return true;
+                }
+            }
+            return false;
+        },
+        onEachFeature: function(feature,layer){
+            var tag = feature.properties.tags;
+            var tagString = "";
+            for(var key in tag){
+                if(tag.hasOwnProperty(key)){
+                    tagString = tagString + key + ": "+tag[key].toString()+"<br>";
+                }
+            }
+            layer.bindPopup(tagString);
+        },
+        style: {
+            color:"magenta"
+        },
+        pointToLayer: function(feature,latlng){
+            return  L.circleMarker(latlng, MapUtil.defaultCircleMarkerOptions);
         }
     },
 
@@ -130,41 +154,6 @@ var MapUtil = {
         }
     },
 
-    //Transform the osm data to a GeoJSON object and add it to the map.
-    displayOsm: function(osm, options){
-        try{
-            var geojson = osmtogeojson(osm);
-            L.geoJSON(geojson,options).addTo(mymap);
-        }catch(ex){
-            alert(ex.message+"\nError occurred when trying to transform OSM to GEOJSON.");
-        }
-        
-    },
-
-    csv2linkGeoJson: function(file){
-        /**
-         * Read map of <node_id, coordinate>. 
-         * The code below was executed once to create the map file,
-         *  thus is useless now.
-         */
-        // var reader = new FileReader();
-        // var links = {};
-        // reader.onload = function(progressEvent){
-        //     var lines = reader.result.split("\n");
-        //     lines = lines.slice(1);
-        //     var i;
-        //     for(var i=0;i<lines.length;i++){
-        //         var items = lines[i].split(',');
-        //         if(items[0]&items[1]&items[2]){
-        //             links[items[0]] = [items[2],items[1]];
-        //         }
-        //     }
-        //     console.log(JSON.stringify(links));
-        // }
-        // reader.readAsText(file);
-        
-    },
-
     readAndDisplayLinks: function(file){
         var reader = new FileReader();
         var gjson = {
@@ -271,6 +260,25 @@ var MapUtil = {
         };
         reader.readAsText(file);
     },
+
+    readAndDisplayGeoJson: function(file){
+        var reader = new FileReader();
+        reader.onload = function(progressEvent){
+            var gjson = JSON.parse(reader.result);
+            MapUtil.displayGeoJson(gjson,MapUtil.geoJsonFilterOptions,"GeoJSON Layer");
+        }
+        reader.readAsText(file);
+    },
+
+    readAndDisplayOsm: function(file){
+        var reader = new FileReader();
+        reader.onload = function(progressEvent){
+            var osmData = $.parseXML(reader.result);
+            var geoJsonData = osmtogeojson(osmData);
+            MapUtil.displayGeoJson(geoJsonData,MapUtil.geoJsonFilterOptions,"OSM Layer");
+        }
+        reader.readAsText(file);
+    },
     
     //tile layer
     greyScaleTileUrl : "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
@@ -300,58 +308,6 @@ window.onload=function(){
     var extraLayers = new Object();
     layerGroup = L.control.layers(baseLayers,extraLayers).addTo(mymap);
     
-    //file input
-    var input = document.getElementById("fileinput"),
-        modal = document.getElementById("pickfilemodal"),
-        exampleTrips = document.getElementById("exampleTrips"),
-        osminput = document.getElementById("osminput"),
-        osmmodal = document.getElementById("pickosmmodal"),
-        geojsoninput = document.getElementById("geojsoninput"),
-        geojsonmodal = document.getElementById("geojsonmodal");
-        linksinput = document.getElementById("linksinput");
-        linksmodal = document.getElementById("linksmodal");
-    
-    EventUtil.addHandler(exampleTrips,"click",function(e){
-        $("#pickfilemodal").modal('toggle');
-        MapUtil.displayGeoJson(getTrips(),MapUtil.defaultTripFilterOptions,"Example Trips");
-    });
-    
-    EventUtil.addHandler(input,"change",function(e){
-        var files = EventUtil.getTarget(e).files;
-        $("#pickfilemodal").modal('toggle');
-        MapUtil.readAndDisplayTrips(files[0]);
-    });
-
-    EventUtil.addHandler(osminput,"change",function(e){
-        var files = EventUtil.getTarget(e).files;
-        $("#pickosmmodal").modal('toggle');
-        var reader = new FileReader();
-        reader.onload = function(progressEvent){
-            var osmData = $.parseXML(reader.result);
-            var geoJsonData = osmtogeojson(osmData);
-            MapUtil.displayGeoJson(geoJsonData,MapUtil.defaultWayFilterOptions,"OSM Layer");
-        }
-        reader.readAsText(files[0]);
-    });
-
-    EventUtil.addHandler(geojsoninput,"change",function(e){
-        var files = EventUtil.getTarget(e).files;
-        $("#geojsonmodal").modal('toggle');
-        var reader = new FileReader();
-        reader.onload = function(progressEvent){
-            var data = reader.result;
-            var geoJsonData = JSON.parse(data);
-            MapUtil.displayGeoJson(geoJsonData,MapUtil.defaultWayFilterOptions,"GeoJSON Layer");
-        }
-        reader.readAsText(files[0]);
-    });
-
-    EventUtil.addHandler(linksinput,"change",function(e){
-        var files = EventUtil.getTarget(e).files;
-        $("#linksmodal").modal('toggle');
-        MapUtil.readAndDisplayLinks(files[0]);
-        //MapUtil.csv2linkGeoJson(files[0]);
-    });
     
     //tile switcher
 	$("#streets")

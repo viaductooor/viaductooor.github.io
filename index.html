@@ -19,6 +19,10 @@
 		src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
 		integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
 		crossorigin="anonymous"></script>
+	<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+	<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+	
 	<script src="scripts/EventUtil.js"></script>
 
 	<head>
@@ -30,6 +34,7 @@
 		<script src="scripts/osmtogeojson.js"></script>
 		<script src="scripts/exampleTrips.js"></script>
 		<script src="scripts/myscript.js"></script>
+		
 		
 		
 
@@ -59,10 +64,10 @@
 							role="button" data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="false"> Load Layer </a>
 						<div class="dropdown-menu" aria-labelledby="navbarDropdown">
-							<a id="loadtrips" class="dropdown-item btn" data-toggle="modal" data-target="#pickfilemodal">Trips</a>
-							<a id="loadlinks" class="dropdown-item btn" data-toggle="modal" data-target="#linksmodal">Links</a>
-							<a id="loadlinks" class="dropdown-item btn" data-toggle="modal" data-target="#geojsonmodal">GeoJSON</a>
-							<a id="loadlinks" class="dropdown-item btn" data-toggle="modal" data-target="#pickosmmodal">OSM</a>
+							<a id="linksBtn" class="dropdown-item btn modal-trigger">Links</a>
+							<a id="tripsBtn" class="dropdown-item btn modal-trigger">Trips</a>
+							<a id="geoJsonBtn" class="dropdown-item btn modal-trigger">GeoJSON</a>
+							<a id="osmBtn" class="dropdown-item btn modal-trigger">OSM</a>
 						</div></li>
 
 					<li class="nav-item dropdown"><a
@@ -84,90 +89,7 @@
 
 		<div id="mapid"></div>
 		<!-- Modal -->
-		<div class="modal fade" id="pickfilemodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">Pick a csv file</h5>
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-				<div class="modal-body">
-					<div class="custom-file">
-						<input type="file" id="fileinput" class="custom-file-input">
-						<label id="filelabel" class="custom-file-label" for="customFile">Choose file</label>
-					</div>
-				</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-primary"  id="exampleTrips" >Example</button>
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="modal fade" id="pickosmmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">Pick a osm file</h5>
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-				<div class="modal-body">
-					<div class="custom-file">
-						<input type="file" id="osminput" class="custom-file-input">
-						<label id="filelabel" class="custom-file-label" for="customFile">Choose file</label>
-					</div>
-				</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="modal fade" id="geojsonmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">Pick a GeoJSON file</h5>
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-				<div class="modal-body">
-					<div class="custom-file">
-						<input type="file" id="geojsoninput" class="custom-file-input">
-						<label id="filelabel" class="custom-file-label" for="customFile">Choose file</label>
-					</div>
-				</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="modal fade" id="linksmodal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog" role="document">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">Choose a csv file</h5>
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-				<div class="modal-body">
-					<div class="custom-file">
-						<input type="file" id="linksinput" class="custom-file-input">
-						<label id="filelabel" class="custom-file-label" for="customFile">Choose file</label>
-					</div>
-				</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
-			</div>
-		</div>
+		<div id="chooseFileModal"></div>
+		<script type="text/babel" src="scripts/components.js"></script>
 	</body>
 </html>
